@@ -1,0 +1,9 @@
+﻿  Building 'driver' with toolset 'WindowsKernelModeDriver10.0' and the 'Universal' target platform.
+  Stamping x64\Debug\driver.inf
+  Stamping [Version] section with DriverVer=04/12/2025,18.29.20.690
+  deviceiocontrol.c
+  driver.vcxproj -> F:\driver\x64\Debug\driver.sys
+  Done Adding Additional Store
+  Successfully signed: F:\driver\x64\Debug\driver.sys
+  
+  Driver is 'Universal'.

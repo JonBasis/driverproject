@@ -1,0 +1,45 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "driver", "driver\driver.vcxproj", "{082D9CE9-7000-48B6-8B84-30CAB669859D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usermode", "usermode\usermode.vcxproj", "{F8EBA1CA-25E5-4F5F-979C-3A152FC49A54}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Debug|ARM64.Build.0 = Debug|ARM64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Debug|ARM64.Deploy.0 = Debug|ARM64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Debug|x64.ActiveCfg = Debug|x64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Debug|x64.Build.0 = Debug|x64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Debug|x64.Deploy.0 = Debug|x64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Release|ARM64.ActiveCfg = Release|ARM64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Release|ARM64.Build.0 = Release|ARM64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Release|ARM64.Deploy.0 = Release|ARM64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Release|x64.ActiveCfg = Release|x64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Release|x64.Build.0 = Release|x64
+		{082D9CE9-7000-48B6-8B84-30CAB669859D}.Release|x64.Deploy.0 = Release|x64
+		{F8EBA1CA-25E5-4F5F-979C-3A152FC49A54}.Debug|ARM64.ActiveCfg = Debug|x64
+		{F8EBA1CA-25E5-4F5F-979C-3A152FC49A54}.Debug|ARM64.Build.0 = Debug|x64
+		{F8EBA1CA-25E5-4F5F-979C-3A152FC49A54}.Debug|x64.ActiveCfg = Debug|x64
+		{F8EBA1CA-25E5-4F5F-979C-3A152FC49A54}.Debug|x64.Build.0 = Debug|x64
+		{F8EBA1CA-25E5-4F5F-979C-3A152FC49A54}.Release|ARM64.ActiveCfg = Release|x64
+		{F8EBA1CA-25E5-4F5F-979C-3A152FC49A54}.Release|ARM64.Build.0 = Release|x64
+		{F8EBA1CA-25E5-4F5F-979C-3A152FC49A54}.Release|x64.ActiveCfg = Release|x64
+		{F8EBA1CA-25E5-4F5F-979C-3A152FC49A54}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5E735DA2-094E-4E58-A51D-D3786AC55A6C}
+	EndGlobalSection
+EndGlobal

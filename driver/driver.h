@@ -1,0 +1,41 @@
+#pragma once
+#include <ntifs.h>
+#include "utils.h"
+#include "deviceiocontrol.h"
+#include "filtering.h"
+
+#pragma warning(disable : 6271)
+#pragma warning(disable : 4201)
+
+
+/* 
+device and symbolic link name 
+*/
+
+#define DRIVERNAME L"driver"
+
+
+/*
+control codes
+*/
+
+#define IOCTL_DRIVER_TEST CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_DRIVER_BLOCK_IP CTL_CODE(FILE_DEVICE_UNKNOWN, 0x801, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_DRIVER_UNBLOCK_IP CTL_CODE(FILE_DEVICE_UNKNOWN, 0x802, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_DRIVER_BLOCK_PORT CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_DRIVER_UNBLOCK_PORT CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+#define IOCTL_DRIVER_ENUM_IP CTL_CODE(FILE_DEVICE_UNKNOWN, 0x805, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_DRIVER_ENUM_PORT CTL_CODE(FILE_DEVICE_UNKNOWN, 0x806, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+/* 
+function declerations 
+*/
+
+NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_STRING RegistryPath);
+
+VOID DriverUnload(_In_ PDRIVER_OBJECT DriverObject);
+
+NTSTATUS DeviceIoControl(_Inout_ PDEVICE_OBJECT DeviceObject, _Inout_ PIRP Irp);
+
+NTSTATUS CreateClose(_Inout_ PDEVICE_OBJECT DeviceObject, _Inout_ PIRP Irp);

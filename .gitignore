@@ -1,0 +1,6 @@
+*.zip
+*.txt
+poc/
+claude/
+.vs/
+*.bat
