@@ -131,8 +131,8 @@ class DeviceHandler:
             if ip_parts[i] < IP_PART_MIN_VALUE or ip_parts[i] > IP_PART_MAX_VALUE:
                 return None
             
-            sum_of_parts += (ip_parts[i] >> (8 * (3 - i)))
-
+            sum_of_parts += (ip_parts[i] << (8 * (3 - i)))
+            
         return sum_of_parts.to_bytes(IP_BYTES_SIZE, IP_BYTE_ORDER)
         
     def block_ip(self, input : str) -> bool:
@@ -249,13 +249,14 @@ class DeviceHandler:
             return None
         
         blocked_ip : list[str] = []
-        for i in range(0, len(blocked_ip), IP_BYTES_SIZE):
-            int_ip : int = int.from_bytes(blocked_ip[i : i + IP_BYTES_SIZE], IP_BYTE_ORDER)
+        for i in range(0, len(ip_array), IP_BYTES_SIZE):
+            int_ip : int = int.from_bytes(ip_array[i : i + IP_BYTES_SIZE], IP_BYTE_ORDER)
+            print("int_ip: ", int_ip)
             blocked_ip.append(self._convert_ip_int_to_str(int_ip))
         
         return blocked_ip
     
-    def enum_ip(self) -> bytes:
+    def enum_ip(self) -> list[str]:
         """ IOCTL_DRIVER_ENUM_IP handler """
         
         try:
@@ -264,19 +265,32 @@ class DeviceHandler:
                 None,
                 DeviceHandler.SIZE_OF_IP_ENUM_RESPONSE_HEADER_STRUCT
             )
+            
+            response_type : int  = int.from_bytes(array_size[:4], byteorder=IP_BYTE_ORDER)
+            if response_type == 1:
+                return []
+            
+            array_size = int.from_bytes(array_size[4:], byteorder=IP_BYTE_ORDER)
 
-            array_size  = int.from_bytes(array_size, byteorder='big')
-            print("array size", array_size)
+            print("array size: ", array_size)
             ip_array : bytes = self._DeviceIoControl(
                 DeviceHandler.IOCTL_DRIVER_ENUM_IP,
                 None,
                 DeviceHandler.SIZE_OF_IP_ENUM_RESPONSE_HEADER_STRUCT + array_size
             )
             
+            response_type : int = ip_array[:4]
+            if response_type == 0:
+                return None
+            
+            ip_array = ip_array[8:]
+
             print(ip_array)
             ip_array = self._convert_ip_array_to_list(ip_array)
             print(ip_array)
             
+            return ip_array
+        
         except win32api.error as e:
             print(f"error in enum_ip, {e}")
             return False

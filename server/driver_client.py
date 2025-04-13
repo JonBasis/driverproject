@@ -53,6 +53,7 @@ def enum_ip() -> None:
     """ function to enumerate all blocked ip from driver """
     print("enum ip")
     blocked_ip : list[str] = device_handler.enum_ip()
+    print(blocked_ip)
     
 
 
