@@ -108,7 +108,7 @@ class DeviceHandler:
                 output_buffer_size,
             )
 
-            return response
+            return response.decode()
         
         except win32api.error as e:
             print(f"error in test_driver, {e}")
