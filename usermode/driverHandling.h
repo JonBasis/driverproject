@@ -14,6 +14,18 @@
 #define IOCTL_DRIVER_ENUM_PORT CTL_CODE(FILE_DEVICE_UNKNOWN, 0x806, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 
+typedef struct _ipEntry {
+	UINT32 ip;
+	UINT64 packetCount;
+} ipEntry, * PipEntry;
+
+
+typedef struct _portEntry {
+	UINT16 port;
+	UINT64 packetCount;
+} portEntry, * PportEntry;
+
+
 typedef enum _ipEnumResponseType {
 	IP_ARRAY_SIZE = 0,
 	IP_ARRAY_DATA = 1,

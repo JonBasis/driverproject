@@ -11,6 +11,18 @@
 #define PORTS_COUNT 65536
 
 
+typedef struct _ipEntry {
+	UINT32 ip;
+	UINT64 packetCount;
+} ipEntry, *PipEntry;
+
+
+typedef struct _portEntry {
+	UINT16 port;
+	UINT64 packetCount;
+} portEntry, *PportEntry;
+
+
 typedef enum _ipEnumResponseType {
 	IP_ARRAY_SIZE = 0,
 	IP_ARRAY_DATA = 1,
@@ -56,6 +68,6 @@ NTSTATUS BlockPortTraffic(UINT16 targetPort);
 
 NTSTATUS UnblockPortTraffic(UINT16 targetPort);
 
-NTSTATUS EnumIp(PUINT32 outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytesWritten);
+NTSTATUS EnumIp(PipEntry outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytesWritten);
 
-NTSTATUS EnumPort(PUINT16 outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytesWritten);
+NTSTATUS EnumPort(PportEntry outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytesWritten);

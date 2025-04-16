@@ -9,11 +9,10 @@ DEFINE_GUID(IP_BLOCKING_SUBLAYER, 0x227d6ba0, 0x1714, 0x4313, 0x81, 0xb1, 0x07, 
 HANDLE hEngineHandle;
 
 BOOL isBlocking = FALSE;
-UINT32 blockedIp;
 
-PUINT32 ipArray;
+PipEntry ipArray;
 KSPIN_LOCK portArrayLock;
-UINT16 portArray[65536];
+portEntry portArray[PORTS_COUNT];
 
 
 //
@@ -155,14 +154,14 @@ VOID DeleteFilter(VOID) {
 VOID PrintIpArray(VOID) {
 	DbgPrint("ipArray: [\n");
 	for (SIZE_T i = 0; i < lastIpElement; i++) {
-		DbgPrint("%u, ", ipArray[i]);
+		DbgPrint("(%u, %u), ", ipArray[i].ip, ipArray[i].packetCount);
 	}
 	DbgPrint("\n]\n");
 }
 
 
 NTSTATUS SetupIpArray(VOID) {
-	ipArray = ExAllocatePool2(POOL_FLAG_NON_PAGED, ipArraySize * sizeof(UINT32), 'GINN');
+	ipArray = ExAllocatePool2(POOL_FLAG_NON_PAGED, ipArraySize * sizeof(ipEntry), 'GINN');
 	if (!ipArray) {
 		DbgPrint("[-] failed to allocate ip array\n");
 		return STATUS_INSUFFICIENT_RESOURCES;
@@ -185,15 +184,15 @@ NTSTATUS DoubleIpArray(VOID) {
 		goto Done;
 	}
 
-	PUINT32 newIpArray = ExAllocatePool2(POOL_FLAG_NON_PAGED, ipArraySize * 2 * sizeof(UINT32), 'GGIN');
+	PipEntry newIpArray = ExAllocatePool2(POOL_FLAG_NON_PAGED, ipArraySize * 2 * sizeof(ipEntry), 'GGIN');
 	if (!newIpArray) {
 		DbgPrint("[-] failed reallocating memory for ip array\n");
 		Status = STATUS_INSUFFICIENT_RESOURCES;
 		goto Done;
 	}
 
-	RtlZeroMemory(newIpArray, ipArraySize * 2 * sizeof(UINT32));
-	RtlCopyMemory(newIpArray, ipArray, ipArraySize * sizeof(UINT32));
+	RtlZeroMemory(newIpArray, ipArraySize * 2 * sizeof(ipEntry));
+	RtlCopyMemory(newIpArray, ipArray, ipArraySize * sizeof(ipEntry));
 	
 	ExFreePoolWithTag(ipArray, 'GGIN');
 	ipArray = newIpArray;
@@ -320,8 +319,9 @@ BOOL IpInArray(UINT32 ip) {
 	KeAcquireSpinLock(&ipArrayLock, &oldIrql);
 
 	for (SIZE_T i = 0; i < lastIpElement; i++) {
-		if (ipArray[i] == ip) {
+		if (ipArray[i].ip == ip) {
 			exists = TRUE;
+			ipArray[i].packetCount++;
 			goto Done;
 		}
 	}
@@ -354,7 +354,8 @@ NTSTATUS InsertIp(UINT32 ip) {
 	DbgPrint("[+] lock acquired\n");
 
 	DbgPrint("[+] lastIpElement: %ld\n", lastIpElement);
-	ipArray[lastIpElement] = ip;
+	ipEntry IpEntry = { ip, 0 };
+	ipArray[lastIpElement] = IpEntry;
 	lastIpElement++;
 
 	PrintIpArray();
@@ -371,7 +372,7 @@ VOID DeleteIpFromArray(UINT32 ip) {
 	KeAcquireSpinLock(&ipArrayLock, &oldIrql);
 
 	for (SIZE_T i = 0; i < lastIpElement; i++) {
-		if (ipArray[i] == ip) {
+		if (ipArray[i].ip == ip) {
 			for (SIZE_T j = i; j < lastIpElement; j++) {
 				ipArray[j] = ipArray[j + 1];
 			}
@@ -382,7 +383,7 @@ VOID DeleteIpFromArray(UINT32 ip) {
 
 	DbgPrint("[+] ipArray after shift:[\n");
 	for (SIZE_T i = 0; i < lastIpElement; i++) {
-		DbgPrint("%u, ", ipArray[i]);
+		DbgPrint("%u, ", ipArray[i].ip);
 	}
 	DbgPrint("\n]\n");
 
@@ -394,7 +395,10 @@ VOID InsertPortToArray(UINT16 port) {
 	KIRQL oldIrql = 0;
 	KeAcquireSpinLock(&portArrayLock, &oldIrql);
 
-	portArray[port] = 1;
+	if (!portArray[port].port) {
+		portArray[port].packetCount = 0;
+	}
+	portArray[port].port = 1;
 
 	KeReleaseSpinLock(&portArrayLock, oldIrql);
 }
@@ -404,7 +408,8 @@ VOID DeletePortFromArray(UINT16 port) {
 	KIRQL oldIrql = 0;
 	KeAcquireSpinLock(&portArrayLock, &oldIrql);
 
-	portArray[port] = 0;
+	portArray[port].port = 0;
+	portArray[port].packetCount = 0;
 
 	KeReleaseSpinLock(&portArrayLock, oldIrql);
 }
@@ -416,8 +421,9 @@ BOOL PortInArray(UINT16 port) {
 
 	BOOL inArray = FALSE;
 
-	if (portArray[port]) {
+	if (portArray[port].port) {
 		inArray = TRUE;
+		portArray[port].packetCount++;
 	}
 
 	KeReleaseSpinLock(&portArrayLock, oldIrql);
@@ -438,38 +444,38 @@ VOID GetSourceDestPort(const FWPS_INCOMING_VALUES* inFixedValues, PUINT16 source
 }
 
 
-VOID CopyIpArrayToArray(PUINT32 arrayOut, ULONG_PTR* bytesWritten) {
+VOID CopyIpArrayToArray(PipEntry arrayOut, ULONG_PTR* bytesWritten) {
 	DbgPrint("[+] copying ip array\n");
 
-	DWORD arrayOutWrittenBytes = lastIpElement * sizeof(UINT32);
+	DWORD arrayOutWrittenBytes = lastIpElement * sizeof(ipEntry);
 
 	RtlZeroMemory(arrayOut, arrayOutWrittenBytes);
 	RtlCopyMemory(arrayOut, ipArray, arrayOutWrittenBytes);
 
 	DbgPrint("array copied:\n");
 	for (DWORD i = 0; i < lastIpElement; i++) {
-		DbgPrint("%u, ", ipArray[i]);
+		DbgPrint("(%u, %u), ", ipArray[i].ip, ipArray[i].packetCount);
 	}
 	DbgPrint("\n");
 
 	DbgPrint("array after copy:\n");
 	for (DWORD i = 0; i < lastIpElement; i++) {
-		DbgPrint("%u, ", arrayOut[i]);
+		DbgPrint("(%u, %u), ", arrayOut[i].ip, arrayOut[i].packetCount);
 	}
 	DbgPrint("\n");
 	*bytesWritten += arrayOutWrittenBytes;
 }
 
 
-VOID CopyPortArrayToArray(PUINT16 arrayOut, ULONG_PTR* bytesWritten) {
+VOID CopyPortArrayToArray(PportEntry arrayOut, ULONG_PTR* bytesWritten) {
 	KIRQL oldIrql = 0;
 
 	KeAcquireSpinLock(&portArrayLock, &oldIrql);
 
 	DbgPrint("[+] copying port array\n");
 
-	RtlCopyMemory(arrayOut, portArray, PORTS_COUNT * sizeof(UINT16));
-	*(PULONG)bytesWritten = (ULONG)(PORTS_COUNT * sizeof(UINT16));
+	RtlCopyMemory(arrayOut, portArray, PORTS_COUNT * sizeof(portEntry));
+	*(PULONG)bytesWritten = (ULONG)(PORTS_COUNT * sizeof(portEntry));
 
 	KeReleaseSpinLock(&portArrayLock, oldIrql);
 }
@@ -584,7 +590,7 @@ NTSTATUS UnblockPortTraffic(UINT16 targetPort) {
 }
 
 
-NTSTATUS EnumIp(PUINT32 outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytesWritten) {
+NTSTATUS EnumIp(PipEntry outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytesWritten) {
 	NTSTATUS Status = STATUS_SUCCESS;
 
 	KIRQL oldIrql = 0;
@@ -602,14 +608,14 @@ NTSTATUS EnumIp(PUINT32 outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytes
 
 
 	PipEnumResponseHeader responseHeader = (PipEnumResponseHeader)outputBuffer;
-	responseHeader->dataSize = lastIpElement * sizeof(UINT32);
+	responseHeader->dataSize = lastIpElement * sizeof(ipEntry);
 	responseHeader->type = IP_ARRAY_DATA;
 	*bytesWritten = sizeof(ipEnumResponseHeader);
 
 	if (lastIpElement == 0) goto Done;
 
 
-	SIZE_T responseSize = sizeof(ipEnumResponseHeader) + lastIpElement * sizeof(UINT32);
+	SIZE_T responseSize = sizeof(ipEnumResponseHeader) + lastIpElement * sizeof(ipEntry);
 
 	if (outputBufferLength < responseSize) {
 		responseHeader->type = IP_ARRAY_SIZE;
@@ -621,7 +627,7 @@ NTSTATUS EnumIp(PUINT32 outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytes
 
 	DbgPrint("[+] enumerating ips\n");
 
-	PUINT32 actualIpArrayStart = outputBuffer + sizeof(ipEnumResponseHeader) / sizeof(UINT32);
+	PipEntry actualIpArrayStart = outputBuffer + sizeof(ipEnumResponseHeader) / sizeof(ipEntry);
 	CopyIpArrayToArray(actualIpArrayStart, bytesWritten);
 
 	Done:
@@ -631,10 +637,10 @@ NTSTATUS EnumIp(PUINT32 outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytes
 }
 
 
-NTSTATUS EnumPort(PUINT16 outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytesWritten) {
+NTSTATUS EnumPort(PportEntry outputBuffer, ULONG outputBufferLength, ULONG_PTR* bytesWritten) {
 	NTSTATUS Status = STATUS_SUCCESS;
 
-	if (outputBufferLength < PORTS_COUNT * sizeof(UINT16)) {
+	if (outputBufferLength < PORTS_COUNT * sizeof(portEntry)) {
 		return STATUS_BUFFER_TOO_SMALL;
 	}
 

@@ -38,9 +38,9 @@ int main(void)
 
 	puts("[+] welcome!\n");
 
-	testNetworking();
+	//testNetworking();
 
-	/*HANDLE hDeviceObject = CreateFileW(DRIVERNAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hDeviceObject = CreateFileW(DRIVERNAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hDeviceObject == INVALID_HANDLE_VALUE) {
 		printf("[-] failed to get handle to the device object, error: %ld\n", GetLastError());
 		return 1;
@@ -48,7 +48,7 @@ int main(void)
 
 	printf("[+] got handle to the device object, %p\n", hDeviceObject);
 
-	menu(hDeviceObject);*/
+	menu(hDeviceObject);
 
 	return 0;
 }

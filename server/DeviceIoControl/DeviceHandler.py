@@ -6,11 +6,13 @@ import ctypes
 IP_PART_MIN_VALUE : int = 0
 IP_PART_MAX_VALUE : int = 255
 IP_BYTES_SIZE : int = 4
+IP_STRUCT_SIZE : int = 16
 IP_BYTE_ORDER : str = 'little'
 
 MIN_PORTS : int = 0
 MAX_PORTS : int = 65535
 PORT_BYTES_SIZE : int = 2
+PORT_STRUCT_SIZE : int = 16
 PORT_BYTE_ORDER : str = 'little'
 
 
@@ -96,6 +98,9 @@ class DeviceHandler:
         
         except win32api.error as e:
             print(f"error in DeviceIoControl, {e}")
+            print(ioctl)
+            print(input_buffer)
+            print(output_buffer_size)
             return None
         
     def test_driver(self, input : str, output_buffer_size : int = 1024) -> str:
@@ -241,22 +246,24 @@ class DeviceHandler:
 
         return f"{str(ip_int >> 24)}.{str((ip_int >> 16) & 0xff)}.{str((ip_int >> 8) & 0xff)}.{str(ip_int & 0xff)}"
     
-    def _convert_ip_array_to_list(self, ip_array : bytes) -> list[str]:
+    def _convert_ip_array_to_list(self, ip_array : bytes) -> list[str, int]:
         """ converts ip array to list containing all blocked ip """
 
-        if len(ip_array) % IP_BYTES_SIZE != 0:
-            print("ip array length must be a multiple of 4")
+        if len(ip_array) % IP_STRUCT_SIZE != 0:
+            print("ip array length must be a multiple of 16")
             return None
         
-        blocked_ip : list[str] = []
-        for i in range(0, len(ip_array), IP_BYTES_SIZE):
+        blocked_ip : list[str, int] = []
+        for i in range(0, len(ip_array), IP_STRUCT_SIZE):
             int_ip : int = int.from_bytes(ip_array[i : i + IP_BYTES_SIZE], IP_BYTE_ORDER)
             print("int_ip: ", int_ip)
-            blocked_ip.append(self._convert_ip_int_to_str(int_ip))
+            count : int = int.from_bytes(ip_array[i + 8 : i + IP_STRUCT_SIZE], IP_BYTE_ORDER)
+            print("count:", count)
+            blocked_ip.append((self._convert_ip_int_to_str(int_ip), count))
         
         return blocked_ip
     
-    def enum_ip(self) -> list[str]:
+    def enum_ip(self) -> list[str, int]:
         """ IOCTL_DRIVER_ENUM_IP handler """
         
         try:
@@ -272,22 +279,22 @@ class DeviceHandler:
             
             array_size = int.from_bytes(array_size[4:], byteorder=IP_BYTE_ORDER)
 
-            print("array size: ", array_size)
+            print("ip array size: ", array_size)
             ip_array : bytes = self._DeviceIoControl(
                 DeviceHandler.IOCTL_DRIVER_ENUM_IP,
                 None,
                 DeviceHandler.SIZE_OF_IP_ENUM_RESPONSE_HEADER_STRUCT + array_size
             )
+            print("ip array:", ip_array)
+            # response_type : int = int.from_bytes(ip_array[-4:], byteorder=IP_BYTE_ORDER)
+            # if response_type == 0:
+            #     return None
             
-            response_type : int = ip_array[:4]
-            if response_type == 0:
-                return None
-            
-            ip_array = ip_array[8:]
+            ip_array = ip_array[:-8]
 
-            print(ip_array)
+            
             ip_array = self._convert_ip_array_to_list(ip_array)
-            print(ip_array)
+            print("ip array2:", ip_array)
             
             return ip_array
         
@@ -295,33 +302,35 @@ class DeviceHandler:
             print(f"error in enum_ip, {e}")
             return False
     
-    def _convert_port_array_to_list(self, port_array : bytes) -> list[int]:
+    def _convert_port_array_to_list(self, port_array : bytes) -> list[int, int]:
         """ converts port array to list containing all blocked ports """
 
-        if len(port_array) % PORT_BYTES_SIZE != 0:
-            print("port array length must be a multiple of 2")
+        if len(port_array) % PORT_STRUCT_SIZE != 0:
+            print("port array length must be a multiple of 16")
             return None
         
-        blocked_ports : list[int] = []
-        for port in range(0, len(port_array), PORT_BYTES_SIZE):
+        blocked_ports : list[int, int] = []
+        for port in range(0, len(port_array), PORT_STRUCT_SIZE):
             port_state : bytes = port_array[port : port + PORT_BYTES_SIZE]
             int_port_state : int = int.from_bytes(port_state, PORT_BYTE_ORDER)
+            count : int = int.from_bytes(port_array[port + 8 : port + PORT_STRUCT_SIZE], PORT_BYTE_ORDER)
             if int_port_state != 0:
-                blocked_ports.append(port // 2)
+                blocked_ports.append((port // PORT_STRUCT_SIZE, count))
         
         return blocked_ports
     
-    def enum_port(self) -> list[int]:
+    def enum_port(self) -> list[int, int]:
         """ IOCTL_DRIVER_ENUM_PORT handler """
 
         try:
             ports_status : bytes = self._DeviceIoControl(
                 DeviceHandler.IOCTL_DRIVER_ENUM_PORT,
                 None,
-                (MAX_PORTS - MIN_PORTS) * 4
+                (MAX_PORTS - MIN_PORTS + 1) * PORT_STRUCT_SIZE
                 )
             
-            blocked_ports : list[int] = self._convert_port_array_to_list(ports_status)
+            blocked_ports : list[int, int] = self._convert_port_array_to_list(ports_status)
+            print("blocked ports:", blocked_ports)
             if blocked_ports == None:
                 print("got invalid port array")
                 return None

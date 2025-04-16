@@ -310,10 +310,10 @@ class DriverGUI(QMainWindow):
         
         try:
             self.ip_list.clear()
-            blocked_ips = self.device_handler.enum_ip()
+            blocked_ips : list[str, int] = self.device_handler.enum_ip()
             if blocked_ips:
-                for ip in blocked_ips:
-                    self.ip_list.addItem(ip)
+                for ip, count in blocked_ips:
+                    self.ip_list.addItem(f"{ip.ljust(16, " ")} (blocked {count} times)")
             self.status_bar.showMessage("IP list refreshed")
         except Exception as e:
             QMessageBox.critical(self, "Refresh Error", f"Error refreshing IP list: {str(e)}")
@@ -324,10 +324,10 @@ class DriverGUI(QMainWindow):
         
         try:
             self.port_list.clear()
-            blocked_ports = self.device_handler.enum_port()
+            blocked_ports : list[int, int] = self.device_handler.enum_port()
             if blocked_ports:
-                for port in blocked_ports:
-                    self.port_list.addItem(str(port))
+                for port, count in blocked_ports:
+                    self.port_list.addItem(f"{str(port).ljust(16, " ")} (blocked {count} times)")
             self.status_bar.showMessage("Port list refreshed")
         except Exception as e:
             QMessageBox.critical(self, "Refresh Error", f"Error refreshing port list: {str(e)}")

@@ -1,2 +1,3 @@
-﻿  networking.c
+﻿  driverHandling.c
+F:\driver\usermode\driverHandling.c(197,11): warning C4133: 'initializing': incompatible types - from 'PipEnumResponseHeader' to 'PipEntry'
   usermode.vcxproj -> F:\driver\x64\Debug\usermode.exe

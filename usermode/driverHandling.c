@@ -126,13 +126,13 @@ void unblockPort(HANDLE hDeviceObject) {
 }
 
 
-void printBlockedIp(PUINT32 outputBuffer, DWORD outputBufferSize) {
+void printBlockedIp(PipEntry outputBuffer, DWORD outputBufferSize) {
 	UINT32 ip;
 
 	printf("[+] outputBufferSize %lu\n", outputBufferSize);
 	puts("[+] blocked ips:");
 	for (SIZE_T i = 0; i < outputBufferSize; i++) {
-		ip = outputBuffer[i];
+		ip = outputBuffer[i].ip;
 
 		printf("%u.%u.%u.%u, ", ip >> 24, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF);
 	}
@@ -179,7 +179,7 @@ void enumIp(HANDLE hDeviceObject) {
 
 	printf("[+] needed buffer size is %u, ipEnumResponseHeader size is %zu, ipArraySize is %u\n", outputBufferSize, sizeof(ipEnumResponseHeader), ipArraySize);
 
-	PUINT32 outputBuffer = (PUINT32)calloc(outputBufferSize / sizeof(UINT32), sizeof(UINT32));
+	PipEnumResponseHeader outputBuffer = (PipEnumResponseHeader)calloc(outputBufferSize / sizeof(PipEnumResponseHeader), sizeof(PipEnumResponseHeader));
 
 	if (!outputBuffer) {
 		puts("[-] malloc failed in ipArray");
@@ -194,19 +194,19 @@ void enumIp(HANDLE hDeviceObject) {
 		return;
 	}
 
-	PUINT32 ipArray = outputBuffer + sizeof(ipEnumResponseHeader) / sizeof(UINT32);
-	printBlockedIp(ipArray, ipArraySize / sizeof(UINT32));
+	PipEntry ipArray = outputBuffer + sizeof(ipEnumResponseHeader) / sizeof(ipEntry);
+	printBlockedIp(ipArray, ipArraySize / sizeof(ipEntry));
 
 	free(outputBuffer);
 	puts("[+] enumIp finished successfully");
 }
 
 
-void printBlockedPort(PUINT16 ports) {
+void printBlockedPort(PportEntry ports) {
 	puts("[+] blocked ports:");
 
 	for (INT32 i = 0; i < PORTS_COUNT; i++) {
-		if (ports[i]) printf("%hu, ", (i & 0xFFFF));
+		if (ports[i].port) printf("%hu, ", (i & 0xFFFF));
 	}
 
 	puts("");
@@ -215,15 +215,15 @@ void printBlockedPort(PUINT16 ports) {
 
 void enumPort(HANDLE hDeviceObject) {
 	BOOL Success = TRUE;
-	PUINT16 ports;
+	PportEntry ports;
 
-	ports = (PUINT16)calloc(PORTS_COUNT, sizeof(UINT16));
+	ports = (PportEntry)calloc(PORTS_COUNT, sizeof(PportEntry));
 	if (!ports) {
 		puts("[-] malloc failed in enumPort");
 		return;
 	}
 
-	Success = DeviceIoControl(hDeviceObject, IOCTL_DRIVER_ENUM_PORT, NULL, 0, ports, PORTS_COUNT * sizeof(UINT16), NULL, NULL);
+	Success = DeviceIoControl(hDeviceObject, IOCTL_DRIVER_ENUM_PORT, NULL, 0, ports, PORTS_COUNT * sizeof(PportEntry), NULL, NULL);
 
 	if (!Success) {
 		printf("[-] failed to DeviceIoControl, error: %ld\n", GetLastError());

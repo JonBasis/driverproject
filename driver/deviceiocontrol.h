@@ -21,6 +21,6 @@ NTSTATUS IOCTLDriverBlockPort(PIRP Irp, PUINT16 inputBuffer, ULONG inputBufferLe
 
 NTSTATUS IOCTLDriverUnblockPort(PIRP Irp, PUINT16 inputBuffer, ULONG inputBufferLength, PVOID outputBuffer, ULONG outputBufferLength, PDEVICE_OBJECT DeviceObject);
 
-NTSTATUS IOCTLDriverEnumIp(PIRP Irp, PUINT32 outputBuffer, ULONG outputBufferLength, PDEVICE_OBJECT DeviceObject);
+NTSTATUS IOCTLDriverEnumIp(PIRP Irp, PipEntry outputBuffer, ULONG outputBufferLength, PDEVICE_OBJECT DeviceObject);
 
-NTSTATUS IOCTLDriverEnumPort(PIRP Irp, PUINT16 outputBuffer, ULONG outputBufferLength, PDEVICE_OBJECT DeviceObject);
+NTSTATUS IOCTLDriverEnumPort(PIRP Irp, PportEntry outputBuffer, ULONG outputBufferLength, PDEVICE_OBJECT DeviceObject);

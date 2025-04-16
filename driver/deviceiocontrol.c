@@ -151,7 +151,7 @@ NTSTATUS IOCTLDriverUnblockPort(PIRP Irp, PUINT16 inputBuffer, ULONG inputBuffer
 }
 
 
-NTSTATUS IOCTLDriverEnumIp(PIRP Irp, PUINT32 outputBuffer, ULONG outputBufferLength, PDEVICE_OBJECT DeviceObject) {
+NTSTATUS IOCTLDriverEnumIp(PIRP Irp, PipEntry outputBuffer, ULONG outputBufferLength, PDEVICE_OBJECT DeviceObject) {
 	NTSTATUS Status = STATUS_SUCCESS;
 	UNREFERENCED_PARAMETER(DeviceObject);
 
@@ -166,18 +166,18 @@ NTSTATUS IOCTLDriverEnumIp(PIRP Irp, PUINT32 outputBuffer, ULONG outputBufferLen
 
 	DbgPrint("array:\n");
 	for (ULONG i = 0; i < outputBufferLength; i++) {
-		DbgPrint("%u, ", outputBuffer[i]);
+		DbgPrint("%u, ", outputBuffer[i].ip);
 	}
 	DbgPrint("\n");
 	return Status;
 }
 
 
-NTSTATUS IOCTLDriverEnumPort(PIRP Irp, PUINT16 outputBuffer, ULONG outputBufferLength, PDEVICE_OBJECT DeviceObject) {
+NTSTATUS IOCTLDriverEnumPort(PIRP Irp, PportEntry outputBuffer, ULONG outputBufferLength, PDEVICE_OBJECT DeviceObject) {
 	NTSTATUS Status = STATUS_SUCCESS;
 	UNREFERENCED_PARAMETER(DeviceObject);
 
-	if (outputBufferLength < PORTS_COUNT * sizeof(UINT16)) {
+	if (outputBufferLength < PORTS_COUNT * sizeof(portEntry)) {
 		DbgPrint("[-] recieved buffer size is invalid\n");
 		Irp->IoStatus.Information = 0;
 		return STATUS_BUFFER_TOO_SMALL;
