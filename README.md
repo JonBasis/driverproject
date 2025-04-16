@@ -17,6 +17,7 @@ the driver allows the user to block or unblock ip addresses and ports from recie
 - IOCTL_DRIVER_ENUM_PORT allows the client to recieve an array of all blocked ports
 
 ## Maybe Add in the Future
-- impliment support for IOCTL_DRIVER_ENUM_IP in the client
-- add features for statistics (how many times a packet with a blocked ip address or port has been blocked)
+- impliment support for IOCTL_DRIVER_ENUM_IP in the client ✅
+- add features for statistics (how many times a packet with a blocked ip address or port has been blocked) ✅
 - implement communication with remote server and p2p between driver client and remote client
+- align blocked ip and block port gui
