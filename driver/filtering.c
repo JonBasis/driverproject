@@ -154,7 +154,7 @@ VOID DeleteFilter(VOID) {
 VOID PrintIpArray(VOID) {
 	DbgPrint("ipArray: [\n");
 	for (SIZE_T i = 0; i < lastIpElement; i++) {
-		DbgPrint("(%u, %u), ", ipArray[i].ip, ipArray[i].packetCount);
+		DbgPrint("(%u, %llu), ", ipArray[i].ip, ipArray[i].packetCount);
 	}
 	DbgPrint("\n]\n");
 }
@@ -184,7 +184,7 @@ NTSTATUS DoubleIpArray(VOID) {
 		goto Done;
 	}
 
-	PipEntry newIpArray = ExAllocatePool2(POOL_FLAG_NON_PAGED, ipArraySize * 2 * sizeof(ipEntry), 'GGIN');
+	PipEntry newIpArray = ExAllocatePool2(POOL_FLAG_NON_PAGED, ipArraySize * 2 * sizeof(ipEntry), 'DCBA');
 	if (!newIpArray) {
 		DbgPrint("[-] failed reallocating memory for ip array\n");
 		Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -194,7 +194,7 @@ NTSTATUS DoubleIpArray(VOID) {
 	RtlZeroMemory(newIpArray, ipArraySize * 2 * sizeof(ipEntry));
 	RtlCopyMemory(newIpArray, ipArray, ipArraySize * sizeof(ipEntry));
 	
-	ExFreePoolWithTag(ipArray, 'GGIN');
+	ExFreePoolWithTag(ipArray, 'DCBA');
 	ipArray = newIpArray;
 
 	ipArraySize *= 2;
@@ -212,7 +212,7 @@ VOID SetupPortArray(VOID) {
 
 
 VOID DeleteIpArray(VOID) {
-	ExFreePoolWithTag(ipArray, 'GGIN');
+	ExFreePoolWithTag(ipArray, 'DCBA');
 }
 
 
@@ -332,6 +332,45 @@ BOOL IpInArray(UINT32 ip) {
 }
 
 
+BOOL BinaryIpInArray(UINT32 ip, BOOL incCount) {
+	BOOL exists = FALSE;
+
+	DbgPrint("[+] BinaryIpInArray called\n");
+
+	if (lastIpElement <= 0) return FALSE;
+
+	KIRQL oldIrql;
+
+	KeAcquireSpinLock(&ipArrayLock, &oldIrql);
+
+	INT64 low = 0;
+	INT64 high = lastIpElement - 1;
+	INT64 middle;
+
+	while (low <= high) {
+		middle = low + (high - low) / 2;
+
+		if (ipArray[middle].ip == ip) {
+			exists = TRUE;
+			if (incCount) ipArray[middle].packetCount++;
+			goto Done;
+		}
+
+		if (ipArray[middle].ip < ip) {
+			low = middle + 1;
+		}
+		else {
+			high = middle - 1;
+		}
+	}
+
+Done:
+	DbgPrint("[+] releasing lock\n");
+	KeReleaseSpinLock(&ipArrayLock, oldIrql);
+	return exists;
+}
+
+
 NTSTATUS InsertIp(UINT32 ip) {
 	NTSTATUS Status = STATUS_SUCCESS;
 
@@ -362,6 +401,67 @@ NTSTATUS InsertIp(UINT32 ip) {
 	KeReleaseSpinLock(&ipArrayLock, oldIrql);
 
 	Done2:
+	DbgPrint("[+] InsertIp done\n");
+	return Status;
+}
+
+
+NTSTATUS _InsertIpEntry(ipEntry IpEntry) {
+	NTSTATUS Status = STATUS_SUCCESS;
+
+	INT64 i = lastIpElement - 1;
+
+	if (lastIpElement >= ipArraySize) {
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+
+	if (lastIpElement == 0) {
+		ipArray[0] = IpEntry;
+		lastIpElement++;
+		return Status;
+	}
+
+	while ((i >= 0) && (ipArray[i].ip > IpEntry.ip)) {
+		ipArray[i + 1] = ipArray[i];
+		i--;
+	}
+
+	ipArray[i + 1] = IpEntry;
+	lastIpElement++;
+
+	return Status;
+}
+
+
+NTSTATUS InsertIpSorted(UINT32 ip) {
+	NTSTATUS Status = STATUS_SUCCESS;
+
+	DbgPrint("[+] InsertIpSorted called\n");
+
+	if (BinaryIpInArray(ip, FALSE)) {
+		goto Exit;
+	}
+
+	if (lastIpElement >= ipArraySize) {
+		DbgPrint("[+] doubling ip array size\n");
+		Status = DoubleIpArray();
+		if (!NT_SUCCESS(Status)) goto Exit;
+	}
+
+	DbgPrint("[+] acquiring lock\n");
+	KIRQL oldIrql = 0;
+	KeAcquireSpinLock(&ipArrayLock, &oldIrql);
+
+	DbgPrint("[+] lock acquired\n");
+
+	DbgPrint("[+] lastIpElement: %ld\n", lastIpElement);
+	ipEntry IpEntry = { ip, 0 };
+	Status = _InsertIpEntry(IpEntry);
+
+	PrintIpArray();
+	KeReleaseSpinLock(&ipArrayLock, oldIrql);
+
+	Exit:
 	DbgPrint("[+] InsertIp done\n");
 	return Status;
 }
@@ -454,13 +554,13 @@ VOID CopyIpArrayToArray(PipEntry arrayOut, ULONG_PTR* bytesWritten) {
 
 	DbgPrint("array copied:\n");
 	for (DWORD i = 0; i < lastIpElement; i++) {
-		DbgPrint("(%u, %u), ", ipArray[i].ip, ipArray[i].packetCount);
+		DbgPrint("(%u, %llu), ", ipArray[i].ip, ipArray[i].packetCount);
 	}
 	DbgPrint("\n");
 
 	DbgPrint("array after copy:\n");
 	for (DWORD i = 0; i < lastIpElement; i++) {
-		DbgPrint("(%u, %u), ", arrayOut[i].ip, arrayOut[i].packetCount);
+		DbgPrint("(%u, %llu), ", arrayOut[i].ip, arrayOut[i].packetCount);
 	}
 	DbgPrint("\n");
 	*bytesWritten += arrayOutWrittenBytes;
@@ -505,7 +605,7 @@ VOID BlockIpClassify(const FWPS_INCOMING_VALUES* inFixedValues, const FWPS_INCOM
 	UINT16 destPort;
 	GetSourceDestPort(inFixedValues, &sourcePort, &destPort);
 
-	if (isBlocking && (IpInArray(sourceIp) || IpInArray(destIp))) {
+	if (isBlocking && (BinaryIpInArray(sourceIp, TRUE) || BinaryIpInArray(destIp, TRUE))) {
 		classifyOut->actionType = FWP_ACTION_BLOCK;
 	}
 
@@ -536,7 +636,7 @@ NTSTATUS BlockIpTraffic(UINT32 targetIp) {
 
 	DbgPrint("[+] blocking ip %u\n", targetIp);
 
-	Status = InsertIp(targetIp);
+	Status = InsertIpSorted(targetIp);
 	if (!NT_SUCCESS(Status)) {
 		return Status;
 	}

@@ -1,6 +1,6 @@
 ﻿  Building 'driver' with toolset 'WindowsKernelModeDriver10.0' and the 'Universal' target platform.
   Stamping x64\Debug\driver.inf
-  Stamping [Version] section with DriverVer=04/14/2025,13.56.59.746
+  Stamping [Version] section with DriverVer=04/27/2025,15.58.38.99
   filtering.c
   driver.vcxproj -> F:\driver\x64\Debug\driver.sys
   Done Adding Additional Store
