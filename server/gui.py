@@ -19,6 +19,8 @@ class DriverGUI(QMainWindow):
         self.connect_to_driver()
         
     def init_ui(self):
+        """ init gui """
+
         self.setWindowTitle("NetGuard - Driver Control Center")
         self.setMinimumSize(900, 600)
         
@@ -211,6 +213,8 @@ class DriverGUI(QMainWindow):
         self.status_bar.showMessage("Ready")
         
     def connect_to_driver(self):
+        """ create a device handler object"""
+
         try:
             self.status_bar.showMessage("Connecting to driver...")
             self.device_handler = DeviceHandler(DEVICE_NAME)
@@ -225,6 +229,8 @@ class DriverGUI(QMainWindow):
             self.status_bar.showMessage("Failed to connect to driver")
     
     def block_ip(self):
+        """ block ip gui option """
+
         if not self.device_handler:
             QMessageBox.warning(self, "Not Connected", "Not connected to driver")
             return
@@ -245,6 +251,8 @@ class DriverGUI(QMainWindow):
             QMessageBox.critical(self, "Block Error", f"Error blocking IP: {str(e)}")
     
     def unblock_ip(self):
+        """ unblock ip gui option """
+
         if not self.device_handler:
             QMessageBox.warning(self, "Not Connected", "Not connected to driver")
             return
@@ -265,6 +273,8 @@ class DriverGUI(QMainWindow):
             QMessageBox.critical(self, "Unblock Error", f"Error unblocking IP: {str(e)}")
     
     def block_port(self):
+        """ block port gui option """
+
         if not self.device_handler:
             QMessageBox.warning(self, "Not Connected", "Not connected to driver")
             return
@@ -285,6 +295,8 @@ class DriverGUI(QMainWindow):
             QMessageBox.critical(self, "Block Error", f"Error blocking port: {str(e)}")
     
     def unblock_port(self):
+        """ unblock port gui option """
+
         if not self.device_handler:
             QMessageBox.warning(self, "Not Connected", "Not connected to driver")
             return
@@ -305,6 +317,8 @@ class DriverGUI(QMainWindow):
             QMessageBox.critical(self, "Unblock Error", f"Error unblocking port: {str(e)}")
     
     def refresh_ip_list(self):
+        """ enum ip gui option """
+
         if not self.device_handler:
             return
         
@@ -319,6 +333,8 @@ class DriverGUI(QMainWindow):
             QMessageBox.critical(self, "Refresh Error", f"Error refreshing IP list: {str(e)}")
     
     def refresh_port_list(self):
+        """ enum port gui option """
+
         if not self.device_handler:
             return
         
@@ -333,6 +349,8 @@ class DriverGUI(QMainWindow):
             QMessageBox.critical(self, "Refresh Error", f"Error refreshing port list: {str(e)}")
     
     def test_driver(self):
+        """ test driver gui option """
+        
         if not self.device_handler:
             QMessageBox.warning(self, "Not Connected", "Not connected to driver")
             return

@@ -21,12 +21,16 @@ class ServerClient(SocketWrapper):
             raise
     
     def _decrypt_aes_key(self, key : bytes, private_key : bytes) -> bytes:
+        """ decrypt client aes key """
+
         rsa_key = RSA.import_key(private_key)
         cipher = PKCS1_OAEP.new(rsa_key)
         decrypted_key : bytes = cipher.decrypt(key)
         return decrypted_key
     
     def _get_key_hello(self, public_key) -> bool:
+        """ send client the server's public rsa key """
+
         hello_message : ProtocolMessage = self.recv_message()
         if hello_message.get_code() != "HELLO":
             return False
@@ -37,6 +41,8 @@ class ServerClient(SocketWrapper):
         return True
     
     def _get_key_key(self) -> bool:
+        """ get session key from client """
+
         key_message : ProtocolMessage = self.recv_message()
         if key_message.get_code() != "KEY":
             print("got wrong message code")
@@ -56,6 +62,8 @@ class ServerClient(SocketWrapper):
         return True
     
     def _get_key(self) -> bool:
+        """ get session key from client """
+
         success : bool = self._get_key_hello(self._public_key)
         
         if not success:
@@ -69,6 +77,20 @@ class ServerClient(SocketWrapper):
         return True
     
     def handshake(self) -> bool:
+        """ exchange session key before communication """
+        
         success : bool = self._get_key()
         
         return success
+    
+    def get_status(self) -> str:
+        """ get client status (driver / admin) """
+        
+        status_message : ProtocolMessage = self.recv_message()
+        if status_message.get_code() != 'IDENTIFY':
+            self.send_error('IDENTIFY', 'expected to recv an IDENTIFY message')
+            return None
+        if status_message.get_value('status') != 'driver' and status_message.get_value('status') != 'admin':
+            self.send_error('IDENTIFY', 'expected status to be either driver or admin')
+            return None
+        return status_message.get_value('status') 

@@ -138,20 +138,15 @@ class DeviceHandler:
             
             sum_of_parts += (ip_parts[i] << (8 * (3 - i)))
             
-        return sum_of_parts.to_bytes(IP_BYTES_SIZE, IP_BYTE_ORDER)
+        return sum_of_parts
         
-    def block_ip(self, input : str) -> bool:
+    def block_ip_int(self, int_ip : int) -> bool:
         """ IOCTL_DRIVER_BLOCK_IP handler """
-        
-        int_ip : bytes = self._convert_string_to_ip(input)
-        if int_ip == None:
-            print("error, invalid ip")
-            return False
         
         try:
             self._DeviceIoControl(
                 DeviceHandler.IOCTL_DRIVER_BLOCK_IP,
-                int_ip,
+                int_ip.to_bytes(IP_BYTES_SIZE, IP_BYTE_ORDER),
                 0,
             )
 
@@ -160,8 +155,8 @@ class DeviceHandler:
         except win32api.error as e:
             print(f"error in block_ip, {e}")
             return False
-        
-    def unblock_ip(self, input : str) -> bool:
+    
+    def block_ip(self, input : str) -> bool:
         """ IOCTL_DRIVER_BLOCK_IP handler """
 
         int_ip : bytes = self._convert_string_to_ip(input)
@@ -169,10 +164,15 @@ class DeviceHandler:
             print("error, invalid ip")
             return False
         
+        return self.block_ip_int(int_ip)
+    
+    def unblock_ip_int(self, int_ip : int) -> bool:
+        """ IOCTL_DRIVER_BLOCK_IP handler """
+
         try:
             self._DeviceIoControl(
                 DeviceHandler.IOCTL_DRIVER_UNBLOCK_IP,
-                int_ip,
+                int_ip.to_bytes(IP_BYTES_SIZE, IP_BYTE_ORDER),
                 0,
             )
 
@@ -181,7 +181,17 @@ class DeviceHandler:
         except win32api.error as e:
             print(f"error in unblock_ip, {e}")
             return False
+    
+    def unblock_ip(self, input) -> bool:
+        """ IOCTL_DRIVER_BLOCK_IP handler """
         
+        int_ip : bytes = self._convert_string_to_ip(input)
+        if int_ip == None:
+            print("error, invalid ip")
+            return False
+        
+        return self.unblock_ip_int(int_ip)
+    
     def _convert_port_to_integer(self, port : int) -> bytes:
         """ converts port number to bytes """
 
@@ -259,11 +269,11 @@ class DeviceHandler:
             print("int_ip: ", int_ip)
             count : int = int.from_bytes(ip_array[i + 8 : i + IP_STRUCT_SIZE], IP_BYTE_ORDER)
             print("count:", count)
-            blocked_ip.append((self._convert_ip_int_to_str(int_ip), count))
+            blocked_ip.append((int_ip, count))
         
         return blocked_ip
     
-    def enum_ip(self) -> list[str, int]:
+    def enum_ip_int(self) -> list[int, int]:
         """ IOCTL_DRIVER_ENUM_IP handler """
         
         try:
@@ -301,6 +311,14 @@ class DeviceHandler:
         except win32api.error as e:
             print(f"error in enum_ip, {e}")
             return False
+    
+    def enum_ip(self) -> list[str, int]:
+        """ enump ip with strings """
+
+        blocked_ips : list[int, int] = self.enum_ip_int()
+        blocked_ips = [(self._convert_ip_int_to_str(blocked_ip), count) for blocked_ip, count in blocked_ips]
+        
+        return blocked_ips
     
     def _convert_port_array_to_list(self, port_array : bytes) -> list[int, int]:
         """ converts port array to list containing all blocked ports """

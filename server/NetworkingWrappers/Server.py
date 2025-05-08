@@ -41,11 +41,15 @@ class Server():
             raise
         
     def _add_client(self, client : ServerClient) -> None:
+        """ add client to client list """
+
         with self._clients_lock:
             self._clients.append(client)
             self._client_count += 1
 
     def accept_client(self) -> ServerClient:
+        """ accept client """
+        
         try:
             conn, address = self._socket.accept()
             ip : str = address[0]
@@ -53,7 +57,8 @@ class Server():
 
             client : ServerClient = ServerClient(self._debug, ip, port, conn, self._public_key, self._private_key)
             self._add_client(client)
-
+            client.handshake()
+            
             return client
         
         except Exception as e:

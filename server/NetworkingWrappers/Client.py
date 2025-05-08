@@ -5,28 +5,33 @@ from Crypto.Random import get_random_bytes
 from Crypto.PublicKey import RSA
 
 class Client(SocketWrapper):
-    def __init__(self, debug : bool, ip : str, port : int, password : bytes) -> None:
+    def __init__(self, debug : bool, ip : str, port : int) -> None:
         try:
             super().__init__(debug, ip, port)
             self.connect_to(ip, port)
-            self._password : bytes = password
             
         except Exception as e:
             print(f"exception in Client.__init__(), {e}")
             raise
     
     def _generate_aes_key(self) -> bytes:
+        """ generate an aes key """
+
         key : bytes = get_random_bytes(self.KEY_LENGTH)
         
         return key
     
     def _encrypt_aes_key(self, key : bytes, server_public_key : bytes) -> bytes:
+        """ encrypt the aes key using the server's public rsa key """
+
         rsa_key = RSA.import_key(server_public_key)
         cipher = PKCS1_OAEP.new(rsa_key)
         encrypted_key : bytes = cipher.encrypt(key)
         return encrypted_key
     
     def _get_key_hello(self) -> bytes:
+        """ get server public key """
+
         hello_message : ProtocolMessage = ProtocolMessage("HELLO")
         self.send_message(hello_message)
         
@@ -43,6 +48,8 @@ class Client(SocketWrapper):
             return None
         
     def _get_key_key(self, encrypted_aes_key : bytes, aes_key : bytes) -> bool:
+        """ send the session key to the server """
+
         key_message : ProtocolMessage = ProtocolMessage("KEY", key=encrypted_aes_key)
         self.send_message(key_message)
         
@@ -60,6 +67,8 @@ class Client(SocketWrapper):
             return False
     
     def _get_key(self) -> bool:
+        """ generate a session key and exchange with server """
+
         server_public_key : bytes = self._get_key_hello()
         
         aes_key : bytes = self._generate_aes_key()
@@ -71,6 +80,8 @@ class Client(SocketWrapper):
         return success
     
     def handshake(self) -> bool:
+        """ exchange session key before communication """
+        
         success : bool = self._get_key()
 
         return success
