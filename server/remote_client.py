@@ -245,7 +245,7 @@ class LoginDialog(QDialog):
         self.init_ui()
         
     def init_ui(self):
-        self.setWindowTitle("NetGuard - Login")
+        self.setWindowTitle("DriverShark - Login")
         self.setMinimumWidth(400)
         self.setStyleSheet("""
             QDialog {
@@ -285,7 +285,7 @@ class LoginDialog(QDialog):
         layout = QVBoxLayout(self)
         
         # Title
-        title = QLabel("NETGUARD REMOTE CLIENT")
+        title = QLabel("DRIVERSHARK REMOTE CLIENT")
         title.setFont(QFont("Arial", 16, QFont.Bold))
         title.setStyleSheet("color: #00ccff;")
         title.setAlignment(Qt.AlignCenter)
@@ -391,7 +391,7 @@ class RemoteClientGUI(QMainWindow):
         
     def init_ui(self):
         """ Initialize GUI """
-        self.setWindowTitle("NetGuard - Remote Client")
+        self.setWindowTitle("DriverShark - Remote Client")
         self.setMinimumSize(900, 600)
         
         self.setStyleSheet("""
@@ -466,7 +466,7 @@ class RemoteClientGUI(QMainWindow):
         
         header = QWidget()
         header_layout = QHBoxLayout(header)
-        title_label = QLabel("NETGUARD REMOTE CLIENT")
+        title_label = QLabel("DRIVERSHARK REMOTE CLIENT")
         title_label.setFont(QFont("Arial", 18, QFont.Bold))
         title_label.setStyleSheet("color: #00ccff;")
         title_label.setAlignment(Qt.AlignCenter)
